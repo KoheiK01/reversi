@@ -6,10 +6,10 @@ class Board:
 
     # novoc用属性
     disc = [[0] * 8 for _ in range(8)]
-    white_disc = []
+    white_disc = [[0] * 8 for _ in range(8)]
     white_disc_bit = 0
     white_score = 0
-    black_disc = []
+    black_disc = [[0] * 8 for _ in range(8)]
     black_disc_bit = 0
     black_score = 0
 
@@ -86,16 +86,23 @@ class Board:
         """discを更新する"""
 
         self.disc = [[0] * 8 for _ in range(8)]
+        self.black_disc = [[0] * 8 for _ in range(8)]
+        self.white_disc = [[0] * 8 for _ in range(8)]
+
         for i in range(self.size ** 2):
 
             # ビットボードから行と列のインデックスを計算
             row_index = (i) // self.size
             col_index = (i) % self.size
 
-            if (1 << self.size ** 2 - 1 - i) & self.black_disc_bit:
+            if (1 << (self.size ** 2 - 1 - i)) & self.black_disc_bit:
                 self.disc[row_index][col_index] = 1  # 黒
-            elif (1 << self.size ** 2 - 1 - i) & self.white_disc_bit:
+                self.black_disc[row_index][col_index] = 1
+                self.white_disc[row_index][col_index] = 0
+            elif (1 << (self.size ** 2 - 1 - i)) & self.white_disc_bit:
                 self.disc[row_index][col_index] = -1  # 白
+                self.black_disc[row_index][col_index] = 0
+                self.white_disc[row_index][col_index] = 1
 
     def count_score(self, disc_bit):
         """石の数を数える"""

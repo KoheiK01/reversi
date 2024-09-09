@@ -4,7 +4,7 @@ from Color import Color
 from Screen import Screen
 from Show import Show
 from Player import player
-from AI.original_kk import next
+from AI.wthor_AI import next
 
 
 class Main:
@@ -22,6 +22,9 @@ class Main:
     # FPSの設定
     FPS = 60
     clock = pygame.time.Clock()
+
+    # 最後に置いた位置の履歴
+    put_list = []
 
     # 関数-------------------------------------------------------------------------
     def __init__(self):
@@ -43,6 +46,7 @@ class Main:
         board = Board()  # boardを初期化
         cur_color = "black"  # 黒が先行
         game_end = False  # ゲームは始まったばかり
+        self.put_list = []
 
         return menu, board, cur_color, game_end
 
@@ -126,11 +130,12 @@ class Main:
             if legal_mask:
                 pygame.draw.circle(self.screen, Color.GRAY, (center[0], center[1]), 30)
 
-    def draw_put_disc(self, col_index, row_index):
+    def draw_put_disc(self):
         """直前に置いた石を描画"""
 
+        (col_index, row_index) = self.put_list[-1]  # 直前に置いた石
         center = self.square_centers[row_index][col_index]  # 置いた石の中心
-        pygame.draw.circle(self.screen, Color.LIGHT_GRAY, (center[0], center[1]), 15)
+        pygame.draw.circle(self.screen, Color.RED, (center[0], center[1]), 15)
 
     def draw_stone_score(self, color, score):
         """石の数を描画する"""
@@ -198,8 +203,6 @@ class Main:
     def play_game(self):
         """オセロを行うメイン"""
 
-        col_index = None
-        row_index = None
         menu, board, cur_color, game_end = self.init_data()  # バトルを行う初期化
         run = True
         while run:
@@ -207,8 +210,8 @@ class Main:
 
             legal_bit = board.legal_bit(cur_color)  # 石を置ける場所の取得
             self.draw_legal(legal_bit)  # 石を置ける場所の色付け
-            if col_index:
-                self.draw_put_disc(col_index, row_index)  # 直前に置いた石を描画
+            if not self.put_list == []:
+                self.draw_put_disc()  # 直前に置いた石を描画
             self.draw_stone_score("black", board.black_score)  # 黒石の数を描画
             self.draw_stone_score("white", board.white_score)  # 白石の数を描画
 
@@ -231,6 +234,7 @@ class Main:
                 (col_index, row_index) = next(board)  # 次に置く石の場所を決定する
                 board.put_disc(cur_color, col_index, row_index)  # 石を置く
                 cur_color = "black" if cur_color == "white" else "white"
+                self.put_list.append((col_index, row_index))
 
             else:
                 for event in pygame.event.get():
@@ -252,6 +256,7 @@ class Main:
                             row_index = (my - Screen.START_Y) // self.square_size
                             if board.put_disc(cur_color, col_index, row_index):  # 石を置く
                                 cur_color = "black" if cur_color == "white" else "white"
+                                self.put_list.append((col_index, row_index))
 
                         # もう一度ゲームを行う
                         if (Show.ONEMORE_RECT.collidepoint(mx, my) and game_end == True) or Show.RESET_RECT.collidepoint(mx, my):
@@ -261,10 +266,11 @@ class Main:
                         if Show.WAIT_RECT.collidepoint(mx, my) and game_end == False:
                             if menu == "pvp" and len(board.black_disc_bit_list) >= 2:
                                 board.undo()  # 1手戻る
+                                self.put_list = self.put_list[:-1]  # 最後の1つを削除
                                 cur_color = "black" if cur_color == "white" else "white"
                             elif menu == "pvc" and len(board.black_disc_bit_list) >= 3:
                                 board.pvc_undo()  # 2手戻る
-
+                                self.put_list = self.put_list[:-2]  # 最後の2つを削除
     # ==============================================================================
 
 
