@@ -26,6 +26,8 @@ class Board:
         self.white_disc_bit = 0x0000001008000000        # 白石
 
         # 盤面（ビットボード）の推移
+        self.black_disc_bit_list = []  # 初期化
+        self.white_disc_bit_list = []  # 初期化
         self.black_disc_bit_list.append(self.black_disc_bit)  # 履歴を更新する
         self.white_disc_bit_list.append(self.white_disc_bit)  # 履歴を更新する
 
@@ -73,15 +75,6 @@ class Board:
         self.white_disc_bit = self.white_disc_bit_list[-1]
         self.update_disc_ratio()  # discが更新されたときに呼び出す
 
-    def pvc_undo(self):
-        """2手戻る（コンピュータ対戦用)"""
-
-        self.black_disc_bit_list = self.black_disc_bit_list[:-2]  # 最後の2つを削除
-        self.white_disc_bit_list = self.white_disc_bit_list[:-2]
-        self.black_disc_bit = self.black_disc_bit_list[-1]
-        self.white_disc_bit = self.white_disc_bit_list[-1]
-        self.update_disc_ratio()  # discが更新されたときに呼び出す
-
     def update_disc(self):
         """discを更新する"""
 
@@ -89,17 +82,17 @@ class Board:
         self.black_disc = [[0] * 8 for _ in range(8)]
         self.white_disc = [[0] * 8 for _ in range(8)]
 
-        for i in range(self.size ** 2):
+        for i in range(64):
 
             # ビットボードから行と列のインデックスを計算
-            row_index = (i) // self.size
-            col_index = (i) % self.size
+            row_index = (i) // 8
+            col_index = (i) % 8
 
-            if (1 << (self.size ** 2 - 1 - i)) & self.black_disc_bit:
+            if (1 << (63 - i)) & self.black_disc_bit:
                 self.disc[row_index][col_index] = 1  # 黒
                 self.black_disc[row_index][col_index] = 1
                 self.white_disc[row_index][col_index] = 0
-            elif (1 << (self.size ** 2 - 1 - i)) & self.white_disc_bit:
+            elif (1 << (63 - i)) & self.white_disc_bit:
                 self.disc[row_index][col_index] = -1  # 白
                 self.black_disc[row_index][col_index] = 0
                 self.white_disc[row_index][col_index] = 1
@@ -143,7 +136,7 @@ class Board:
         """左方向にシフトして合法手を探索"""
 
         tmp = (player_bit << shift) & op_masked_bit
-        for _ in range(self.size - 3):
+        for _ in range(5):
             tmp |= (tmp << shift) & op_masked_bit
         legal_bit = (tmp << shift) & blank_bit
         return legal_bit
@@ -152,7 +145,7 @@ class Board:
         """右方向にシフトして合法手を探索"""
 
         tmp = (player_bit >> shift) & op_masked_bit
-        for _ in range(self.size - 3):
+        for _ in range(5):
             tmp |= (tmp >> shift) & op_masked_bit
         legal_bit = (tmp >> shift) & blank_bit
         return legal_bit
@@ -183,7 +176,7 @@ class Board:
         flip_bit = tmp
         if flip_bit == 0:
             return 0
-        for _ in range(self.size - 2):
+        for _ in range(6):
             tmp = tmp << shift
             if tmp & op_masked_bit == 0:  # 連続している相手の石はなくなった
                 break
@@ -202,7 +195,7 @@ class Board:
         flip_bit = tmp
         if flip_bit == 0:
             return 0
-        for _ in range(self.size - 2):
+        for _ in range(6):
             tmp = tmp >> shift
             if tmp & op_masked_bit == 0:  # 連続している相手の石はなくなった
                 break
@@ -242,13 +235,13 @@ class Board:
 
     def bit_to_xy(self, bit):
         xy = []
-        for i in range(self.size ** 2):
+        for i in range(64):
 
             # ビットボードから行と列のインデックスを計算
-            row_index = (i) // self.size
-            col_index = (i) % self.size
+            row_index = (i) // 8
+            col_index = (i) % 8
 
-            if (1 << self.size ** 2 - 1 - i) & bit:
+            if (1 << 63 - i) & bit:
                 xy.append((col_index, row_index))
         return xy
     # ------------------------------------------------------------------------------
